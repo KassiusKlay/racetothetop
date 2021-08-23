@@ -10,7 +10,6 @@ import plotly.graph_objects as go
 
 
 APP = 'portfolio'
-CREDS = 'user_credentials.xlsx'
 
 
 def logout():
@@ -27,7 +26,11 @@ def back_settings_buttton():
 
 
 def edit_portfolio():
-    if state.product in state.df.loc[
+    if state.amount == 0:
+        state.df = state.df.loc[~(
+            (state.df.User == state.user) &
+            (state.df.Product == state.product))]
+    elif state.product in state.df.loc[
             state.df.User == state.user].Product.values:
         state.df.Amount = state.df.Amount.where(
                 (state.df.Product != state.product) |
@@ -42,12 +45,13 @@ def edit_portfolio():
                 }
         state.df = state.df.append(row, ignore_index=True).sort_values(
                 ['User', 'Type', 'Product'])
+    dbx = db.get_dropbox_client()
+    db.upload_dataframe(dbx, APP, state.df, 'df.xlsx')
     for i in ['product', 'option', 'value', 'currency', 'amount']:
         del state[i]
 
 
 def settings_page():
-    st.write(state.df)
     st.write(state.df.loc[state.df.User == state.user])
     st.write('## Add / Edit Product')
     with st.form(key='search'):
@@ -82,7 +86,7 @@ def settings_page():
         if len(state.amount) > 0:
             try:
                 state.amount = float(state.amount)
-                assert state.amount > 0
+                assert state.amount >= 0
             except Exception:
                 st.warning('Amount not a valid number')
             else:
@@ -94,9 +98,12 @@ def show_personal():
     df = state.df.loc[
             state.df.User == state.user
             ].drop(['User', 'Currency'], axis=1).reset_index(drop=True)
+    if df.empty:
+        st.warning('Your Portfolio is empty. Please update it in Settings')
+        st.stop()
     c = CurrencyConverter()
     fx_rate = c.convert(1, 'USD')
-    cols = st.columns(len(df))
+    cols = st.columns(4)
     col_number = 0
     current_value_list = list()
     for i in zip(df.Type, df.Product, df.Amount):

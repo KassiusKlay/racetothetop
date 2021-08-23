@@ -1,10 +1,8 @@
 import streamlit as st
-import yfinance as yf
 import pandas as pd
 import db
 from init import init_page
 from user import user_page
-from cryptocmd import CmcScraper
 from streamlit import session_state as state
 
 APP = 'portfolio'
