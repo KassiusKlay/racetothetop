@@ -13,27 +13,18 @@ def check_valid_login():
             ].empty:
         state.user = state.login_user
     else:
-        init()
+        init_page()
         st.warning('Utilizador / Password errados')
         st.stop()
 
 
-def login():
-    with st.form(key='login'):
-        st.text_input('User', '', key='login_user')
-        st.text_input(
-                'Password', '', type='password', key='login_password')
-        st.form_submit_button(
-                label='Login', on_click=check_valid_login)
-
-
 def check_valid_register():
     if len(state.register_password) == 0:
-        init()
+        init_page()
         st.warning('Password field is empty')
         st.stop()
     elif any(state.user_credentials.user == state.register_user):
-        init()
+        init_page()
         st.warning('Username already registered')
         st.stop()
     else:
@@ -49,6 +40,15 @@ def check_valid_register():
         state.user = state.register_user
         placeholder.success('Account registered')
         placeholder.empty()
+
+
+def login():
+    with st.form(key='login'):
+        st.text_input('User', '', key='login_user')
+        st.text_input(
+                'Password', '', type='password', key='login_password')
+        st.form_submit_button(
+                label='Login', on_click=check_valid_login)
 
 
 def register():
@@ -71,7 +71,7 @@ def about():
             '[CoinmarketCap](http://www.coinmarketcap.com).')
 
 
-def init():
+def init_page():
     st.title(':racing_car: RACE TO THE TOP :rocket:')
 
     cols = st.columns(3)
