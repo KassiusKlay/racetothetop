@@ -2,67 +2,13 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import db
+from init import init
+from user import user
 from cryptocmd import CmcScraper
 from streamlit import session_state as state
 
 APP = 'portfolio'
 CREDS = 'user_credentials.xlsx'
-
-
-def login():
-    with st.form(key='login'):
-        user = st.text_input('User', '')
-        password = st.text_input('Password', '', type='password')
-        submit_button = st.form_submit_button(label='Login')
-    if submit_button:
-        if not state.user_credentials.loc[
-                (state.user_credentials.user == user) &
-                (state.user_credentials.password == password)].empty:
-            state.user = user
-        else:
-            st.warning('Utilizador / Password errados')
-            st.stop()
-
-
-def register():
-    with st.form(key='register'):
-        user = st.text_input('New Username', '')
-        password = st.text_input('Password', '', type='password')
-        submit_button = st.form_submit_button(label='Register Account')
-    if submit_button:
-        if not password:
-            st.sidebar.warning('Password field is empty')
-            st.stop()
-        if any(state.user_credentials.user == user):
-            st.warning('Username already registered')
-            st.stop()
-        else:
-            placeholder = st.empty()
-            placeholder.warning('Registering  account...')
-            state.user_credentials = state.user_credentials.append(
-                    {'user': user, 'password': password},
-                    ignore_index=True).sort_values(by='user', axis=0)
-            dbx = db.get_dropbox_client()
-            db.upload_dataframe(
-                    dbx, APP, state.user_credentials, CREDS)
-            state.user = user
-            placeholder.success('Account registered')
-            ok = st.button('Ok')
-            if ok:
-                pass
-
-
-def about():
-    st.write(
-            'Compare your Portfolio with your friends '
-            'and other users.'
-            )
-    st.write(
-            'You can create a portfolio using Stocks from '
-            '[Yahoo Finance](http://www.yahoofinance.com) '
-            'or Cryptocurrencies from '
-            '[CoinmarketCap](http://www.coinmarketcap.com).')
-
 
 
 def main():
@@ -74,31 +20,10 @@ def main():
             st.error('Could not download files from database.')
             st.stop()
 
-    st.title(':racing_car: RACE TO THE TOP :rocket:')
-
-    cols = st.columns(3)
-    login_button = cols[0].button('Login')
-    register_button = cols[1].button('Register')
-    about_button = cols[2].button('About')
-
-    if login_button:
-        state.init = 'login'
-    elif register_button:
-        state.init = 'register'
-    elif about_button:
-        state.init = 'about'
-
-    if 'init' in state:
-        if state.init == 'login':
-            login()
-        elif state.init == 'register':
-            register()
-        else:
-            about()
-
-
-
-
+    if 'user' not in state:
+        init()
+    else:
+        user()
 
 
 if __name__ == '__main__':
