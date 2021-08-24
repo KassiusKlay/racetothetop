@@ -1,6 +1,7 @@
 import streamlit as st
 import db
 from streamlit import session_state as state
+import numpy as np
 
 APP = 'portfolio'
 CREDS = 'user_credentials.xlsx'
@@ -9,9 +10,7 @@ CREDS = 'user_credentials.xlsx'
 def check_valid_login():
     pass_to_check = state.user_credentials.loc[
             state.user_credentials.user == state.login_user].password.iloc[0]
-    if isinstance(pass_to_check, int):
-        pass_to_check = str(pass_to_check)
-    elif isinstance(pass_to_check, float):
+    if isinstance(pass_to_check, (int, float, np.int64)):
         pass_to_check = str(pass_to_check)
     if pass_to_check == state.login_password:
         state.user = state.login_user
