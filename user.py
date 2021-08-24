@@ -93,6 +93,18 @@ def settings_page():
                 st.button('Confirm', on_click=edit_portfolio)
 
 
+def get_current_product_price(i):
+    if i[0] == 'Crypto':
+        data = CmcScraper(i[1]).get_dataframe().iloc[:2]
+    else:
+        data = yf.Ticker(i[1]).history(
+                period='2d').sort_index(ascending=False)
+    today_pct_change = data.Close.pct_change(periods=-1).iloc[0]*100
+    today_price = data.iloc[0].Close
+    return (i[1], today_pct_change, today_price)
+
+
+
 def show_personal():
     st.write('### Your Portfolio')
     df = state.df.loc[

@@ -7,14 +7,17 @@ CREDS = 'user_credentials.xlsx'
 
 
 def check_valid_login():
-    if not state.user_credentials.loc[
-            (state.user_credentials.user == state.login_user) &
-            (state.user_credentials.password == state.login_password)
-            ].empty:
+    pass_to_check = state.user_credentials.loc[
+            state.user_credentials.user == state.login_user].password.iloc[0]
+    if isinstance(pass_to_check, int):
+        pass_to_check = str(pass_to_check)
+    elif isinstance(pass_to_check, float):
+        pass_to_check = str(pass_to_check)
+    if pass_to_check == state.login_password:
         state.user = state.login_user
     else:
         init_page()
-        st.warning('Utilizador / Password errados')
+        st.warning('Wrong username / password')
         st.stop()
 
 
