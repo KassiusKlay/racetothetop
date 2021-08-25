@@ -69,10 +69,18 @@ def about():
             'and other users.'
             )
     st.write(
-            'You can create a portfolio using Stocks from '
+            'You can create a portfolio using Stocks* from '
             '[Yahoo Finance](http://www.yahoofinance.com) '
             'or Cryptocurrencies from '
             '[CoinmarketCap](http://www.coinmarketcap.com).')
+    st.write(
+            'The portfolio is updated only **ONCE** a day, '
+            'so you will only see your updated portfolio value '
+            'the following day!'
+            )
+    st.write(
+            ' *from the US only'
+            )
 
 
 def login_page():

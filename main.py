@@ -148,7 +148,18 @@ def portfolio_page():
     draw_pie_graphs(state.user)
 
 
+def portfolio_checker():
+    st.write("# Peep your opponent's portfolio! 👀")
+    user = st.selectbox('Select user', state.df.User.unique())
+    draw_pie_graphs(user)
+
+
+def general_user_data():
+    pass
+
+
 def game_page():
+    st.write('# Who is the boss? 👑 Who sucks? 🤮 ')
     df = state.time_df.copy()
     pct_df = df.groupby('User').Value.pct_change()
     df['Percentage'] = pct_df
@@ -168,17 +179,32 @@ def game_page():
                 df.iloc[daily_looser_index].User,
                 f'{round(df.iloc[daily_looser_index].Percentage*100, 2)}%',
                 )
+    st.markdown('---')
+
+    portfolio_checker()
+    st.markdown('---')
+
+    general_user_data()
+
+    st.markdown('''
+
+    ## To Do:
+
+    - Weekly, Monthy and Yearly Winner and Loser
+    - General User Data
+    ''')
 
 
 def main_page():
     if 'main_page' not in state:
         state.main_page = 'game'
-    st.write(f'## Welcome, {state.user}')
+    st.markdown(f'## Welcome, {state.user}')
     cols = st.columns(4)
     game_button = cols[0].button('Game')
     portfolio_button = cols[1].button('Your Portfolio')
     edit_button = cols[2].button('Edit Portfolio')
     cols[3].button('Logout', on_click=logout)
+    st.markdown('---')
 
     if game_button:
         state.main_page = 'game'
