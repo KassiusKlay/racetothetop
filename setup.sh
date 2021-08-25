@@ -1,4 +1,4 @@
-mkdir -p ~/.streamlit
+mkdir -p ~/app/.streamlit
 echo "[server]
 headless = true
 port = $PORT
