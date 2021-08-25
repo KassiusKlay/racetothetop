@@ -5,4 +5,4 @@ port = $PORT
 enableCORS = false
 " > ~/.streamlit/config.toml
 
-echo dropbox
+echo $dropbox > ~/app/.streamlit/secrets.toml
