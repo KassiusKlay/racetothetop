@@ -2,6 +2,8 @@ import streamlit as st
 import db
 from streamlit import session_state as state
 import numpy as np
+import pandas as pd
+import datetime
 
 APP = 'portfolio'
 CREDS = 'user_credentials.xlsx'
@@ -74,8 +76,6 @@ def about():
 
 
 def init_page():
-    st.title(':racing_car: RACE TO THE TOP :rocket:')
-
     cols = st.columns(3)
     login_button = cols[0].button('Login')
     register_button = cols[1].button('Register')

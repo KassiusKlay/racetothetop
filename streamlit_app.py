@@ -41,21 +41,47 @@ def get_all_products_daily_price_and_pct_change():
     return df
 
 
-def update_time_df():
+def get_current_value_df():
     c = CurrencyConverter()
     fx_rate = c.convert(1, 'USD')
-
     df = pd.merge(state.df, state.products_df)
     c = CurrencyConverter()
     fx_rate = c.convert(1, 'USD')
     df['Value'] = df.Amount * df.Price * fx_rate
+    return df
 
-    df = df.groupby('User').agg({'Value': 'sum'}).reset_index()
+
+def update_time_df():
+    df = state.current_value_df.groupby('User').agg(
+            {'Value': 'sum'}).reset_index()
     df['Date'] = datetime.date.today()
-    df = pd.concat([state.time_df, df])
-
+    state.time_df = pd.concat([state.time_df, df])
     dbx = db.get_dropbox_client()
-    db.upload_dataframe(dbx, APP, df, 'time_df.xlsx')
+    db.upload_dataframe(dbx, APP, state.time_df, 'time_df.xlsx')
+
+
+def show_game():
+    st.title(':racing_car: RACE TO THE TOP :rocket:')
+    st.subheader('Think you are a good investor? Think again!')
+    df = state.time_df.copy()
+    pct_df = df.groupby('User').Value.pct_change()
+    df['Percentage'] = pct_df
+    daily_winner_index = df.loc[
+            df.Date.dt.date == datetime.date.today()].Percentage.idxmax()
+    daily_looser_index = df.loc[
+            df.Date.dt.date == datetime.date.today()].Percentage.idxmin()
+    cols = st.columns(2)
+    cols[0].metric(
+            'Daily Winner',
+            df.iloc[daily_winner_index].User,
+            f'{round(df.iloc[daily_winner_index].Percentage*100, 2)}%',
+            )
+    if daily_looser_index != daily_winner_index:
+        cols[1].metric(
+                'Daily Looser',
+                df.iloc[daily_looser_index].User,
+                f'{round(df.iloc[daily_looser_index].Percentage*100, 2)}%',
+                )
 
 
 def main():
@@ -65,10 +91,16 @@ def main():
             state.user_credentials = db.download_dataframe(dbx, APP, CREDS)
             state.df = db.download_dataframe(dbx, APP, DF)
             state.time_df = db.download_dataframe(dbx, APP, 'time_df.xlsx')
-            state.products_df = get_all_products_daily_price_and_pct_change()
-        except Exception as e:
+        except Exception:
             st.error('Could not download files from database.')
-            st.write(e)
+            st.stop()
+
+    if 'product_df' not in state:
+        try:
+            state.products_df = get_all_products_daily_price_and_pct_change()
+            state.current_value_df = get_current_value_df()
+        except Exception:
+            st.error('Could not get product data')
             st.stop()
 
     if state.time_df.Date.max() != datetime.date.today():
@@ -76,8 +108,10 @@ def main():
 
     if 'user' not in state:
         init_page()
+        show_game()
     else:
         user_page()
+
 
 
 if __name__ == '__main__':

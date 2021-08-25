@@ -5,7 +5,7 @@ import db
 from cryptocmd import CmcScraper
 from streamlit import session_state as state
 from currency_converter import CurrencyConverter
-import plotly.graph_objects as go
+import plotly.express as px
 import concurrent.futures
 import numpy as np
 
@@ -94,49 +94,47 @@ def settings_page():
                 st.button('Confirm', on_click=edit_portfolio)
 
 
-def get_product_data(i):
-    if i[0] == 'Crypto':
-        data = CmcScraper(i[1]).get_dataframe().iloc[:2]
-    else:
-        data = yf.Ticker(i[1]).history(
-                period='2d').sort_index(ascending=False)
-    return data
+def draw_pie_graphs(user):
+    df = state.current_value_df.loc[
+            state.current_value_df.User == user] .drop(
+            ['User', 'Currency'], axis=1)
+    df['Percentage'] = df.Value / df.Value.sum() * 100
+    df.loc[df['Percentage'] < 1, 'Product'] = 'Other Products'
+    fig = px.pie(
+            df,
+            values='Percentage',
+            names=df.Product,
+            title='Percentage by Product',
+            )
+    st.write(fig)
+    df = df.groupby('Type').agg({'Value': 'sum'})
+    df['Percentage'] = df.Value / df.Value.sum() * 100
+    fig = px.pie(
+            df,
+            values='Percentage',
+            names=df.index,
+            title='Percentage by Type',
+            )
+    st.write(fig)
 
 
-def get_daily_df(user):
-    c = CurrencyConverter()
-    fx_rate = c.convert(1, 'USD')
+def draw_line_graph(user):
+    df = state.time_df.loc[state.time_df.User == user]
+    fig = px.line(df, x='Date', y="Value")
+    st.write(fig)
 
-    df = state.df.loc[
-            state.df.User == user
-            ].drop(['User', 'Currency'], axis=1).reset_index(drop=True)
+
+def show_personal():
+    st.write('### Your Portfolio')
+
+    df = state.current_value_df.loc[
+            state.current_value_df.User == state.user] .drop(
+            ['User', 'Currency'], axis=1)
 
     if df.empty:
         st.warning('Your Portfolio is empty. Please update it in Settings')
         st.stop()
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        results = executor.map(get_product_data, zip(df.Type, df.Product))
-
-    df[['Price', 'Change', 'Value']] = np.nan
-    for i, data in enumerate(results):
-        today_price = data.iloc[0].Close
-        today_pct_change = data.Close.pct_change(periods=-1).iloc[0]*100
-        today_value = today_price * df.iloc[i].Amount * fx_rate
-        df.iat[i, 3] = today_price
-        df.iat[i, 4] = today_pct_change
-        df.iat[i, 5] = today_value
-    return df
-
-
-def show_personal():
-    st.write('### Your Portfolio')
-    df = state.df.loc[state.df.User == state.user].drop(
-            ['User', 'Currency'], axis=1)
-    df = pd.merge(df, state.products_df)
-    c = CurrencyConverter()
-    fx_rate = c.convert(1, 'USD')
-    df['Value'] = df.Amount * df.Price * fx_rate
     cols = st.columns(4)
     col_number = 0
     for i in range(len(df)):
@@ -146,21 +144,11 @@ def show_personal():
                 f'{round(df.iloc[i]["Change"], 2)}%',
                 )
         col_number += 1
-    st.write(df)
-    st.metric(
-            'Portfolio Value',
-            f'{round(df["Value"].sum(), 2)} EUR',
-            )
-    df_by_type = df.groupby('Type').agg({'Value': 'sum'})
-    labels = df_by_type.index.values
-    values = df_by_type['Value'].values
-    fig = go.Figure(data=[go.Pie(labels=labels, values=values)])
-    st.write(fig)
 
-    labels = df.Product.values
-    values = df['Value'].values
-    fig = go.Figure(data=[go.Pie(labels=labels, values=values)])
-    st.write(fig)
+    st.write(df)
+    st.metric('Portfolio Value', f'{round(df["Value"].sum(), 2)} EUR')
+    draw_line_graph(state.user)
+    draw_pie_graphs(state.user)
 
 
 def user_page():
@@ -170,8 +158,8 @@ def user_page():
     cols[2].button('Logout', on_click=logout)
 
     if 'settings_button' in state:
-        settings_page()
         st.button('Back', on_click=back_settings_buttton)
+        settings_page()
     else:
         # show_overall()
         show_personal()
