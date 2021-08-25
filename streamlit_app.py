@@ -82,7 +82,7 @@ def main():
             st.error('Could not get product data')
             st.stop()
 
-    if state.time_df.Date.max() != datetime.date.today():
+    if state.time_df.Date.max() != pd.Timestamp(datetime.date.today()):
         update_time_df()
 
     if 'user' not in state:
