@@ -1,13 +1,10 @@
 import streamlit as st
 import yfinance as yf
-import pandas as pd
 import db
 from cryptocmd import CmcScraper
 from streamlit import session_state as state
-from currency_converter import CurrencyConverter
 import plotly.express as px
-import concurrent.futures
-import numpy as np
+import datetime
 
 
 APP = 'portfolio'
@@ -18,12 +15,12 @@ def logout():
         del state[i]
 
 
-def settings_button():
-    state.settings_button = True
+def edit_button():
+    state.edit_button = True
 
 
-def back_settings_buttton():
-    del state.settings_button
+def back_edit_buttton():
+    del state.edit_button
 
 
 def edit_portfolio():
@@ -52,8 +49,8 @@ def edit_portfolio():
         del state[i]
 
 
-def settings_page():
-    st.write(state.df.loc[state.df.User == state.user])
+def edit_page():
+    st.write(state.df.loc[state.df.User == state.user].drop('User', axis=1))
     st.write('## Add / Edit Product')
     with st.form(key='search'):
         product = st.text_input('Search for Product').upper()
@@ -124,7 +121,7 @@ def draw_line_graph(user):
     st.write(fig)
 
 
-def show_personal():
+def portfolio_page():
     st.write('### Your Portfolio')
 
     df = state.current_value_df.loc[
@@ -132,7 +129,7 @@ def show_personal():
             ['User', 'Currency'], axis=1)
 
     if df.empty:
-        st.warning('Your Portfolio is empty. Please update it in Settings')
+        st.warning('Your Portfolio is empty')
         st.stop()
 
     cols = st.columns(4)
@@ -151,15 +148,48 @@ def show_personal():
     draw_pie_graphs(state.user)
 
 
-def user_page():
-    cols = st.columns([3, 1, 1])
-    cols[0].write(f'## Welcome, {state.user}')
-    cols[1].button('Settings', on_click=settings_button)
-    cols[2].button('Logout', on_click=logout)
+def game_page():
+    df = state.time_df.copy()
+    pct_df = df.groupby('User').Value.pct_change()
+    df['Percentage'] = pct_df
+    daily_winner_index = df.loc[
+            df.Date.dt.date == datetime.date.today()].Percentage.idxmax()
+    daily_looser_index = df.loc[
+            df.Date.dt.date == datetime.date.today()].Percentage.idxmin()
+    cols = st.columns(2)
+    cols[0].metric(
+            'Daily Winner',
+            df.iloc[daily_winner_index].User,
+            f'{round(df.iloc[daily_winner_index].Percentage*100, 2)}%',
+            )
+    if daily_looser_index != daily_winner_index:
+        cols[1].metric(
+                'Daily Looser',
+                df.iloc[daily_looser_index].User,
+                f'{round(df.iloc[daily_looser_index].Percentage*100, 2)}%',
+                )
 
-    if 'settings_button' in state:
-        st.button('Back', on_click=back_settings_buttton)
-        settings_page()
-    else:
-        # show_overall()
-        show_personal()
+
+def main_page():
+    if 'main_page' not in state:
+        state.main_page = 'game'
+    st.write(f'## Welcome, {state.user}')
+    cols = st.columns(4)
+    game_button = cols[0].button('Game')
+    portfolio_button = cols[1].button('Your Portfolio')
+    edit_button = cols[2].button('Edit Portfolio')
+    cols[3].button('Logout', on_click=logout)
+
+    if game_button:
+        state.main_page = 'game'
+    elif portfolio_button:
+        state.main_page = 'portfolio'
+    elif edit_button:
+        state.main_page = 'edit'
+
+    if state.main_page == 'game':
+        game_page()
+    elif state.main_page == 'portfolio':
+        portfolio_page()
+    elif state.main_page == 'edit':
+        edit_page()

@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
 import db
-from init import init_page
-from user import user_page
+from login import login_page
+from main import main_page
 from streamlit import session_state as state
 import concurrent.futures
-# from user import get_product_data
 import numpy as np
 from currency_converter import CurrencyConverter
 import datetime
@@ -13,8 +12,6 @@ from cryptocmd import CmcScraper
 import yfinance as yf
 
 APP = 'portfolio'
-CREDS = 'user_credentials.xlsx'
-DF = 'df.xlsx'
 
 
 def get_product_data(i):
@@ -60,36 +57,18 @@ def update_time_df():
     db.upload_dataframe(dbx, APP, state.time_df, 'time_df.xlsx')
 
 
-def show_game():
+def main():
+    # st.set_page_config(layout="wide")
     st.title(':racing_car: RACE TO THE TOP :rocket:')
     st.subheader('Think you are a good investor? Think again!')
-    df = state.time_df.copy()
-    pct_df = df.groupby('User').Value.pct_change()
-    df['Percentage'] = pct_df
-    daily_winner_index = df.loc[
-            df.Date.dt.date == datetime.date.today()].Percentage.idxmax()
-    daily_looser_index = df.loc[
-            df.Date.dt.date == datetime.date.today()].Percentage.idxmin()
-    cols = st.columns(2)
-    cols[0].metric(
-            'Daily Winner',
-            df.iloc[daily_winner_index].User,
-            f'{round(df.iloc[daily_winner_index].Percentage*100, 2)}%',
-            )
-    if daily_looser_index != daily_winner_index:
-        cols[1].metric(
-                'Daily Looser',
-                df.iloc[daily_looser_index].User,
-                f'{round(df.iloc[daily_looser_index].Percentage*100, 2)}%',
-                )
+    st.markdown("""---""")
 
-
-def main():
     dbx = db.get_dropbox_client()
     if 'user_credentials' not in state:
         try:
-            state.user_credentials = db.download_dataframe(dbx, APP, CREDS)
-            state.df = db.download_dataframe(dbx, APP, DF)
+            state.user_credentials = db.download_dataframe(
+                    dbx, APP, 'user_credentials.xlsx')
+            state.df = db.download_dataframe(dbx, APP, 'df.xlsx')
             state.time_df = db.download_dataframe(dbx, APP, 'time_df.xlsx')
         except Exception:
             st.error('Could not download files from database.')
@@ -107,11 +86,9 @@ def main():
         update_time_df()
 
     if 'user' not in state:
-        init_page()
-        show_game()
+        login_page()
     else:
-        user_page()
-
+        main_page()
 
 
 if __name__ == '__main__':

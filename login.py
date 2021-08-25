@@ -75,7 +75,7 @@ def about():
             '[CoinmarketCap](http://www.coinmarketcap.com).')
 
 
-def init_page():
+def login_page():
     cols = st.columns(3)
     login_button = cols[0].button('Login')
     register_button = cols[1].button('Register')
