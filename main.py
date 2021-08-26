@@ -6,8 +6,7 @@ from streamlit import session_state as state
 import plotly.express as px
 import datetime
 
-
-APP = 'portfolio'
+APP = 'racetothetop'
 
 
 def logout():

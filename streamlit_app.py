@@ -11,7 +11,7 @@ import datetime
 from cryptocmd import CmcScraper
 import yfinance as yf
 
-APP = 'portfolio'
+APP = 'racetothetop'
 
 
 def get_product_data(i):

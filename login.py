@@ -2,14 +2,15 @@ import streamlit as st
 import db
 from streamlit import session_state as state
 import numpy as np
-import pandas as pd
-import datetime
 
-APP = 'portfolio'
-CREDS = 'user_credentials.xlsx'
+APP = 'racetothetop'
 
 
 def check_valid_login():
+    if state.login_user not in state.user_credentials.user.values:
+        login_page()
+        st.warning('Wrong username / password')
+        st.stop()
     pass_to_check = state.user_credentials.loc[
             state.user_credentials.user == state.login_user].password.iloc[0]
     if isinstance(pass_to_check, (int, float, np.int64)):
@@ -17,18 +18,18 @@ def check_valid_login():
     if pass_to_check == state.login_password:
         state.user = state.login_user
     else:
-        init_page()
+        login_page()
         st.warning('Wrong username / password')
         st.stop()
 
 
 def check_valid_register():
     if len(state.register_password) == 0:
-        init_page()
+        login_page()
         st.warning('Password field is empty')
         st.stop()
     elif any(state.user_credentials.user == state.register_user):
-        init_page()
+        login_page()
         st.warning('Username already registered')
         st.stop()
     else:
@@ -40,7 +41,7 @@ def check_valid_register():
             }, ignore_index=True).sort_values(by='user', axis=0)
         dbx = db.get_dropbox_client()
         db.upload_dataframe(
-                dbx, APP, state.user_credentials, CREDS)
+                dbx, APP, state.user_credentials, 'user_credentials.xlsx')
         state.user = state.register_user
         placeholder.success('Account registered')
         placeholder.empty()
