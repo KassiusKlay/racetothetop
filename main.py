@@ -1,10 +1,12 @@
 import streamlit as st
 import yfinance as yf
+from pandas_datareader import data as pdr
 import db
 from cryptocmd import CmcScraper
 from streamlit import session_state as state
 import plotly.express as px
 import datetime
+
 
 APP = 'racetothetop'
 
@@ -59,10 +61,16 @@ def edit_page():
     if search:
         if option == 'Stock':
             data = yf.Ticker(product).info
-            try:
-                state.value = round(data['currentPrice'], 2)
+            if 'quoteType' in data.keys():
+                if data['quoteType'] == 'EQUITY':
+                    state.value = data['currentPrice']
+                elif data['quoteType'] == 'ETF':
+                    state.value = data['regularMarketPrice']
+                else:
+                    st.warning(f'Type not recognized: {data["quoteType"]}')
+                    st.stop()
                 state.currency = data['currency']
-            except KeyError:
+            else:
                 st.warning('Could not find product. Please check spelling')
                 st.stop()
         else:
