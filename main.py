@@ -1,6 +1,5 @@
 import streamlit as st
 import yfinance as yf
-from pandas_datareader import data as pdr
 import db
 from cryptocmd import CmcScraper
 from streamlit import session_state as state
