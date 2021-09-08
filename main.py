@@ -4,8 +4,7 @@ import db
 from cryptocmd import CmcScraper
 from streamlit import session_state as state
 import plotly.express as px
-import datetime
-
+import pandas as pd
 
 APP = 'racetothetop'
 
@@ -164,27 +163,53 @@ def general_user_data():
     pass
 
 
-def game_page():
-    st.write('# Who is the boss? 👑 Who sucks? 🤮 ')
-    df = state.time_df.copy()
-    pct_df = df.groupby('User').Value.pct_change()
-    df['Percentage'] = pct_df
-    daily_winner_index = df.loc[
-            df.Date.dt.date == datetime.date.today()].Percentage.idxmax()
-    daily_looser_index = df.loc[
-            df.Date.dt.date == datetime.date.today()].Percentage.idxmin()
+def get_winner_and_looser_percentage_change_for_timeframe(df, tag):
+    df = df.set_index('Date')
+    if tag == 'Daily':
+        df = df.last('2D')
+    elif tag == 'Weekly':
+        df = df.last('7D')
+    elif tag == 'Monthly':
+        df = df.last('30D')
+    df['Percentage'] = df.groupby('User').Value.pct_change().cumsum()
+    winner_index = df.Percentage.idxmax()
+    looser_index = df.Percentage.idxmin()
     cols = st.columns(2)
     cols[0].metric(
-            'Daily Winner',
-            df.iloc[daily_winner_index].User,
-            f'{round(df.iloc[daily_winner_index].Percentage*100, 2)}%',
+            f'{tag} Winner',
+            df.loc[winner_index].User,
+            f'{round(df.loc[winner_index].Percentage*100, 2)}%',
             )
-    if daily_looser_index != daily_winner_index:
+    if df.loc[winner_index].User != df.loc[looser_index].User:
         cols[1].metric(
-                'Daily Looser',
-                df.iloc[daily_looser_index].User,
-                f'{round(df.iloc[daily_looser_index].Percentage*100, 2)}%',
+                f'{tag} Looser',
+                df.loc[looser_index].User,
+                f'{round(df.loc[looser_index].Percentage*100, 2)}%',
                 )
+
+
+def draw_game_line_graph(df):
+    st.write('# Users Evolution 📈')
+    df['Percentage'] = df.groupby('User').Value.pct_change().cumsum()*100
+    fig = px.line(df, x='Date', y='Percentage', color='User')
+    st.write(fig)
+
+
+def game_page():
+    st.write('# Who is the boss? 👑 Who sucks? 🤮 ')
+    df = state.time_df.copy().reset_index(drop=True)
+    df.Date = pd.to_datetime(df.Date)
+    get_winner_and_looser_percentage_change_for_timeframe(df.copy(), 'Daily')
+    st.markdown('---')
+    get_winner_and_looser_percentage_change_for_timeframe(df.copy(), 'Weekly')
+    st.markdown('---')
+    get_winner_and_looser_percentage_change_for_timeframe(df.copy(), 'Monthly')
+    st.markdown('---')
+    get_winner_and_looser_percentage_change_for_timeframe(
+            df.copy(), '🤩All-Time🤩')
+    st.markdown('---')
+
+    draw_game_line_graph(df.copy())
     st.markdown('---')
 
     portfolio_checker()
