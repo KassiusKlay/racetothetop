@@ -5,6 +5,7 @@ from cryptocmd import CmcScraper
 from streamlit import session_state as state
 import plotly.express as px
 import pandas as pd
+import datetime
 
 APP = 'racetothetop'
 
@@ -171,7 +172,10 @@ def get_winner_and_looser_percentage_change_for_timeframe(df, tag):
         df = df.last('7D')
     elif tag == 'Monthly':
         df = df.last('30D')
+    df = df.reset_index(drop=False)
     df['Percentage'] = df.groupby('User').Value.pct_change().cumsum()
+    df = df.loc[
+            df.Date.dt.date == datetime.date.today()].reset_index(drop=True)
     winner_index = df.Percentage.idxmax()
     looser_index = df.Percentage.idxmin()
     cols = st.columns(2)
@@ -221,7 +225,6 @@ def game_page():
 
     ## To Do:
 
-    - Weekly, Monthy and Yearly Winner and Loser
     - General User Data
     ''')
 
