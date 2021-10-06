@@ -185,14 +185,14 @@ def get_winner_and_looser_percentage_change_for_timeframe(df, tag):
                 df.loc[winner_index].User,
                 f'{round(df.loc[winner_index].Percentage*100, 2)}%',
                 )
+        if df.loc[winner_index].User != df.loc[looser_index].User:
+            cols[1].metric(
+                    f'{tag} Looser',
+                    df.loc[looser_index].User,
+                    f'{round(df.loc[looser_index].Percentage*100, 2)}%',
+                    )
     except KeyError:
         st.write('No User for this date')
-    if df.loc[winner_index].User != df.loc[looser_index].User:
-        cols[1].metric(
-                f'{tag} Looser',
-                df.loc[looser_index].User,
-                f'{round(df.loc[looser_index].Percentage*100, 2)}%',
-                )
 
 
 def draw_game_line_graph(df):
