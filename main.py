@@ -192,7 +192,7 @@ def get_winner_and_looser_percentage_change_for_timeframe(df, tag):
                     f'{round(df.loc[looser_index].Percentage*100, 2)}%',
                     )
     except KeyError:
-        st.write('No User for this date')
+        st.write(f'No Winner or Looser for this period: {tag}')
 
 
 def draw_game_line_graph(df):
