@@ -173,7 +173,12 @@ def get_winner_and_looser_percentage_change_for_timeframe(df, tag):
     elif tag == 'Monthly':
         df = df.last('30D')
     df = df.reset_index(drop=False)
-    df['Percentage'] = df.groupby('User').Value.pct_change().cumsum()
+    percentage = pd.DataFrame()
+    for user, user_df in df.groupby('User'):
+        percentage = pd.concat(
+                [percentage, user_df.Value.pct_change().cumsum()]
+                ).sort_index()
+    df['Percentage'] = percentage
     df = df.loc[
             df.Date.dt.date == datetime.date.today()].reset_index(drop=True)
     winner_index = df.Percentage.idxmax()
@@ -197,7 +202,13 @@ def get_winner_and_looser_percentage_change_for_timeframe(df, tag):
 
 def draw_game_line_graph(df):
     st.write('# Users Evolution 📈')
-    df['Percentage'] = df.groupby('User').Value.pct_change().cumsum()*100
+    percentage = pd.DataFrame()
+    for user, user_df in df.groupby('User'):
+        percentage = pd.concat(
+                [percentage, user_df.Value.pct_change().cumsum()]
+                ).sort_index()
+    df['Percentage'] = percentage*100
+    df = df.fillna(0)
     fig = px.line(df, x='Date', y='Percentage', color='User')
     st.write(fig)
 
